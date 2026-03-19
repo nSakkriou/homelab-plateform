@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./hardware-configuration.nix
     ./argocd.nix
   ];
 
@@ -72,10 +73,9 @@
 
   users.users.admin = {
     isNormalUser = true;
-    extraGroups  = [ "wheel" ];
+    extraGroups  = [ "wheel" "networkmanager" ];
     openssh.authorizedKeys.keys = [
-      # Remplacer par votre clé SSH publique :
-      # "ssh-ed25519 AAAA... admin@pc"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM26qaW2Liul3zUiIS6AKUvyr4D6AeZ85JONUnMZbub9 nsakkriou@WX-OR6435545"
     ];
   };
 
