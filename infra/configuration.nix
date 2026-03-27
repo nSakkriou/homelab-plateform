@@ -44,6 +44,7 @@
 
   networking = {
     hostName = "k3s-node";
+    networkmanager.enable = true;
     firewall = {
       enable           = true;
       allowedTCPPorts  = [
@@ -146,6 +147,7 @@
     jq
     vim
     git
+    networkmanager  # inclut nmtui
   ];
 
   # ---------------------------------------------------------------------------
