@@ -61,7 +61,7 @@ in
       helm upgrade --install argocd argo/argo-cd \
         --namespace argocd \
         --create-namespace \
-        --version 2.13.3 \
+        --version 9.4.17 \
         -f ${argocdValues} \
         --wait \
         --timeout 10m
