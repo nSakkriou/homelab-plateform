@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nathansakkriou-tls
+  namespace: gateway
+spec:
+  secretName: nathansakkriou-tls
+  # Utiliser staging pour valider d'abord, puis basculer sur letsencrypt-prod
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - nathansakkriou.com
+    - argocd.nathansakkriou.com
+    # Ajouter ici les sous-domaines de tes applications
+    # - app1.nathansakkriou.com

@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateway-api-crds
+  namespace: argocd
+  annotations:
+    # Wave 0 : les CRDs Gateway API doivent exister AVANT tout le reste.
+    # cert-manager (wave 1) et envoy-gateway (wave 1) dépendent de ces CRDs.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    # Source officielle : repo kubernetes-sigs/gateway-api, channel standard.
+    # Le channel standard inclut : GatewayClass, Gateway, HTTPRoute, GRPCRoute.
+    repoURL: https://github.com/kubernetes-sigs/gateway-api
+    targetRevision: v1.2.1
+    path: config/crd/standard
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: false    # Ne jamais pruner des CRDs automatiquement — supprime tous les objets qui en dépendent
+      selfHeal: true
+    syncOptions:
+      - Replace=true        # Requis : les CRDs dépassent souvent la limite d'annotation kubectl (262 Ko)
+      - ServerSideApply=true

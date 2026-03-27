@@ -1,2 +1,6 @@
 .idea
 age.key
+result
+result-*
+.direnv
+.claude
