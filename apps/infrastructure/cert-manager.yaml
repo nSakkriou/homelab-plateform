@@ -15,8 +15,14 @@ spec:
       values: |
         crds:
           enabled: true
-        # Activer le support expérimental Gateway API pour les solveurs ACME HTTP-01
+        # Feature gate requis pour le solveur HTTP-01 via Gateway API
         featureGates: "ExperimentalGatewayAPISupport=true"
+        # Config objet — nécessaire sur cert-manager v1.15+ pour que le flag soit bien pris en compte
+        config:
+          apiVersion: controller.config.cert-manager.io/v1alpha1
+          kind: ControllerConfiguration
+          featureGates:
+            ExperimentalGatewayAPISupport: true
         resources:
           limits:
             cpu: 200m
