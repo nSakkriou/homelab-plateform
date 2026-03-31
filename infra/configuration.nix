@@ -3,7 +3,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./argocd.nix
   ];
 
   system.stateVersion = "24.11";
@@ -49,10 +48,9 @@
       enable           = true;
       allowedTCPPorts  = [
         22    # SSH
-        80    # HTTP  (Gateway API — Envoy)
-        443   # HTTPS (Gateway API — Envoy)
+        80    # HTTP
+        443   # HTTPS
         6443  # API Kubernetes (kubectl distant)
-        30443 # ArgoCD NodePort — bootstrap uniquement, à retirer après Phase 3
       ];
     };
   };
@@ -71,19 +69,6 @@
       "--tls-san=nathansakkriou.com"
     ];
   };
-
-  # ---------------------------------------------------------------------------
-  # Secrets — sops-nix
-  # La clé age doit être présente sur le serveur dans /var/lib/sops-nix/key.txt
-  # (jamais dans Git — déjà dans .gitignore).
-  # Décommenter et populer secrets/secrets.yaml quand des secrets sont nécessaires.
-  # ---------------------------------------------------------------------------
-
-  # sops = {
-  #   defaultSopsFile = ./secrets/secrets.yaml;
-  #   age.keyFile     = "/var/lib/sops-nix/key.txt";
-  #   secrets."mon_secret" = {};
-  # };
 
   # ---------------------------------------------------------------------------
   # SSH
@@ -147,7 +132,7 @@
     jq
     vim
     git
-    networkmanager  # inclut nmtui
+    networkmanager  # include nmtui
   ];
 
   # ---------------------------------------------------------------------------

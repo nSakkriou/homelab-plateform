@@ -1,0 +1,128 @@
+- name: Add an rancher record that points to an Amazon ELB
+  community.aws.route53:
+    state: present
+    zone: "{{ dns.zone }}"
+    overwrite: true
+    record: "{{ rancher_suffix + '.' + dns.base_host }}"
+    type: A
+    value: "{{ loadbalancer_host.stdout_lines[0] }}"
+    alias: true
+    alias_hosted_zone_id: "Z3Q77PNBQS71R4"
+    wait: true
+
+- name: Create rancher cattle-system namespace
+  kubernetes.core.k8s:
+    name: cattle-system
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Add rancher helm repo
+  kubernetes.core.helm_repository:
+    name: rancher-latest
+    repo_url: https://releases.rancher.com/server-charts/latest
+
+- name: Install rancher helm package in namespace cattle-system
+  kubernetes.core.helm:
+    name: rancher
+    namespace: cattle-system
+    chart_ref: rancher-latest/rancher
+    chart_version: "{{rancher.helm_version}}"
+    update_repo_cache: true
+    values:
+      hostname: "{{ rancher_suffix + '.' + dns.base_host }}"
+      ingress:
+        extraAnnotations:
+          cert-manager.io/cluster-issuer: "{{ rancher_issuer }}"
+          kubernetes.io/ingress.class: nginx
+        tls:
+          source: secret
+      bootstrapPassword: "{{ lookup('ansible.builtin.env', 'RANCHER_ADMIN_PWD') }}"
+      replicas: 1
+
+- name: Check if rancher is available and returning status 200
+  uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3-public/localProviders/local?action=login"
+    validate_certs: no
+  register: api_result
+  until: "api_result.status == 200"
+  retries: 60
+  delay: 5
+
+- name: Setup login
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3-public/localProviders/local?action=login"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      username: "admin"
+      password: "{{ lookup('ansible.builtin.env', 'RANCHER_ADMIN_PWD') }}"
+    validate_certs: no
+    status_code: 201
+    return_content: yes
+  register: login_response
+  until: login_response is defined
+  retries: 60
+  delay: 5
+  
+- name: Set current admin token
+  set_fact:
+    rpwd: "admin"
+    token: "{{ login_response.json.token }}"
+  when: login_response is succeeded
+
+- name: remove first login tag
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3/settings/first-login"
+    method: PUT
+    body_format: json
+    body:
+      name: first-login
+      type: setting
+      value: "false"
+    headers:
+      Authorization: Bearer {{ token }}
+    validate_certs: no
+    status_code: 200
+  retries: 60
+  delay: 5
+
+- name: Configure telemetry
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3/settings/telemetry-opt"
+    method: PUT
+    body_format: json
+    body:
+      name: telemetry-opt
+      type: setting
+      value: "out"
+    headers:
+      Authorization: Bearer {{ token }}
+    validate_certs: no
+    status_code: 200
+  retries: 60
+  delay: 5
+
+- name: Configure server URL
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3/settings/server-url"
+    method: PUT
+    body_format: json
+    body:
+      name: server-url
+      type: setting
+      value: "https://{{ rancher_suffix + '.' + dns.base_host }}"
+    headers:
+      Authorization: Bearer {{ token }}
+    validate_certs: no
+    status_code: 200
+  retries: 60
+  delay: 5
+
+# Add managed Clusters
+
+- name: add managed cluster to Rancher
+  include_tasks: add_managed_clusters.yml
+  with_items: "{{ managed_clusters }}"

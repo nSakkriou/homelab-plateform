@@ -1,0 +1,4 @@
+---
+monitoring_suffix: "monitoring"
+monitoring_ingress_class: "traefik"
+monitoring_issuer: "letsencrypt-staging"

@@ -1,0 +1,6 @@
+
+# Vars custom
+rancher_issuer: "letsencrypt-prod"
+dns:
+  zone: taki.one
+  base_host: tech.taki.one

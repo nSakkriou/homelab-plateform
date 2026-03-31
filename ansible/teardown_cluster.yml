@@ -1,0 +1,37 @@
+---
+
+- hosts: it
+  module_defaults:
+    group/kubernetes.core.k8s:
+      kubeconfig: "{{cluster.kubeconfig | from_json}}"
+    group/kubernetes.core.helm:
+      kubeconfig: "{{cluster.kubeconfig | from_json}}"
+  tasks:
+    - name: Removing argocd entries
+      ansible.builtin.import_role:
+        name: k8s/argocd
+        tasks_from: teardown
+    - name: Removing kube-dashboard entries
+      ansible.builtin.import_role:
+        name: k8s/kube_dashboard
+        tasks_from: teardown
+    - name: Removing monitoring entries
+      ansible.builtin.import_role:
+        name: k8s/monitoring
+        tasks_from: teardown
+    - name: Removing rancher entries
+      ansible.builtin.import_role:
+        name: k8s/rancher
+        tasks_from: teardown
+    - name: Removing apps entries
+      ansible.builtin.import_role:
+        name: k8s/apps
+        tasks_from: teardown
+    - name: Removing ingress-controller entries
+      ansible.builtin.import_role:
+        name: k8s/ingress_controller
+        tasks_from: teardown
+    - name: Removing logstash logging entries
+      ansible.builtin.import_role:
+        name: k8s/logging
+        tasks_from: teardown

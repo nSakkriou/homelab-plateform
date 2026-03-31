@@ -1,0 +1,48 @@
+# Valeurs Helm pour ArgoCD — homelab (Traefik ingress)
+# Mode insecure : HTTPS terminé par Traefik + cert-manager
+
+server:
+  replicas: 1
+  extraArgs:
+    - --insecure
+  config:
+    url: https://{{ argo_suffix + '.' + dns.base_host }}
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: "{{ argo_cert_issuer }}"
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    hosts:
+      - {{ argo_suffix + '.' + dns.base_host }}
+    tls:
+      - hosts:
+          - {{ argo_suffix + '.' + dns.base_host }}
+        secretName: argocd-tls-secret
+    https: false
+
+controller:
+  enableStatefulSet: true
+  args:
+    appResyncPeriod: 30
+  env:
+    - name: "ARGOCD_GPG_ENABLED"
+      value: "false"
+
+repoServer:
+  env:
+    - name: "ARGOCD_GPG_ENABLED"
+      value: "false"
+
+configs:
+  params:
+    server.insecure: "true"
+{% if lookup('ansible.builtin.env', 'APPS_REPO_URL') %}
+  repositories:
+    homelab-apps:
+      url: "{{ lookup('ansible.builtin.env', 'APPS_REPO_URL') }}"
+      name: "homelab-apps"
+      type: "git"
+{% endif %}

@@ -1,0 +1,3 @@
+---
+argo_suffix: "argocd"
+argo_cert_issuer: "letsencrypt-staging"   # passer à letsencrypt-prod en production

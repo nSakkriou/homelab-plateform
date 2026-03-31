@@ -1,0 +1,18 @@
+- name: Retrieve apps record
+  amazon.aws.route53:
+    state: get
+    zone: "{{ dns.zone }}"
+    record: "*.{{ dns.base_host }}"
+    type: A
+  register: apps_rec
+
+- name: Remove apps record
+  community.aws.route53:
+    state: absent
+    zone: "{{ dns.zone }}"
+    record: "{{ apps_rec.set.record }}"
+    type: "{{ apps_rec.set.type }}"
+    value: "{{ apps_rec.set.value }}"
+    alias: true
+    alias_hosted_zone_id: "Z3Q77PNBQS71R4"
+  when: apps_rec.set.record is defined

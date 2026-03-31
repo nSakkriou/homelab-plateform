@@ -1,0 +1,51 @@
+---
+# Monitoring — kube-prometheus-stack (Prometheus + Grafana + AlertManager)
+
+- name: Add prometheus-community Helm repo
+  kubernetes.core.helm_repository:
+    name: prometheus-community
+    repo_url: https://prometheus-community.github.io/helm-charts
+
+- name: Install kube-prometheus-stack
+  kubernetes.core.helm:
+    name: prometheus
+    namespace: monitoring
+    chart_ref: prometheus-community/kube-prometheus-stack
+    chart_version: "{{ monitoring.prometheus_helm_version }}"
+    create_namespace: true
+    update_repo_cache: true
+    wait: true
+    wait_timeout: 600
+    values:
+      grafana:
+        ingress:
+          enabled: true
+          ingressClassName: traefik
+          annotations:
+            cert-manager.io/cluster-issuer: "{{ monitoring_issuer }}"
+            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            traefik.ingress.kubernetes.io/router.tls: "true"
+          hosts:
+            - "{{ monitoring_suffix + '.' + dns.base_host }}"
+          tls:
+            - secretName: grafana-tls-secret
+              hosts:
+                - "{{ monitoring_suffix + '.' + dns.base_host }}"
+      prometheus:
+        prometheusSpec:
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 10Gi
+      alertmanager:
+        alertmanagerSpec:
+          storage:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 10Gi

@@ -1,0 +1,23 @@
+---
+- name: Remove MetalLB L2 advertisement
+  kubernetes.core.k8s:
+    state: absent
+    api_version: metallb.io/v1beta1
+    kind: L2Advertisement
+    name: homelab-l2
+    namespace: metallb-system
+
+- name: Remove MetalLB IP address pool
+  kubernetes.core.k8s:
+    state: absent
+    api_version: metallb.io/v1beta1
+    kind: IPAddressPool
+    name: homelab-pool
+    namespace: metallb-system
+
+- name: Uninstall MetalLB Helm chart
+  kubernetes.core.helm:
+    name: metallb
+    namespace: metallb-system
+    state: absent
+    wait: true

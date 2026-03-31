@@ -1,0 +1,15 @@
+elasticsearch:
+  version: "8.4.2"
+  replicas: "2"
+  storageClass: "gp2"
+  storageSize: "10Gi"
+kibana:
+  version: "8.4.2"
+  suffix: log
+  replicas: "1"
+  clusterIssuer: "letsencrypt-staging"
+logstash:
+  version: "8.4.2"
+  replicas: "1"
+filebeat:
+  version: "8.4.2"

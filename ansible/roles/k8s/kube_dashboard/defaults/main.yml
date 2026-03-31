@@ -1,0 +1,5 @@
+---
+# Set dashboard Host url
+dashboard_suffix: "kube"
+dashboard_ingress_class: "traefik"
+dashboard_issuer: "letsencrypt-staging"

@@ -1,0 +1,54 @@
+# Valeurs Helm pour Traefik — homelab
+# Reçoit une IP LoadBalancer depuis MetalLB
+
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+additionalArguments:
+  - "--serversTransport.insecureSkipVerify=true"
+
+deployment:
+  replicas: 1
+
+service:
+  type: LoadBalancer
+  spec:
+    externalTrafficPolicy: Local
+
+# Activer le dashboard Traefik (accessible via port-forward ou IngressRoute dédié)
+ingressRoute:
+  dashboard:
+    enabled: false   # exposé manuellement via IngressRoute dans apps/k8s/traefik/
+
+# Entrypoints
+ports:
+  web:
+    port: 80
+    redirectTo:
+      port: websecure
+  websecure:
+    port: 443
+    tls:
+      enabled: true
+
+# Permet à Traefik de lire les IngressRoute dans tous les namespaces
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+    allowExternalNameServices: true
+  kubernetesIngress:
+    allowExternalNameServices: true
+
+# TLS store par défaut (utilisé par cert-manager)
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: traefik-default-cert
+
+# Logs
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true

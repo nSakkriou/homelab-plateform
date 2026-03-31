@@ -1,0 +1,21 @@
+# Argocd Namespace
+- name: Create tech namespace
+  kubernetes.core.k8s:
+    name: tech
+    api_version: v1
+    kind: Namespace
+    state: present
+
+# ArgoCD
+- name: Add elastic helm repo
+  kubernetes.core.helm_repository:
+    name: elastic
+    repo_url: https://helm.elastic.co
+    
+- name: Install ECK helm package in namespace tech
+  kubernetes.core.helm:
+    name: elastic-operator
+    namespace: tech
+    chart_ref: elastic/eck-operator
+    chart_version: "{{eck.helm_version}}"
+    update_repo_cache: true

@@ -1,0 +1,79 @@
+
+# ingress-controller Namespace
+- name: Create ingress-controller namespace
+  kubernetes.core.k8s:
+    name: ingress-controller
+    api_version: v1
+    kind: Namespace
+    state: present
+
+# Ingress Controller
+
+- name: Add ingress nginx helm repo
+  kubernetes.core.helm_repository:
+    name: ingress-nginx
+    repo_url: https://kubernetes.github.io/ingress-nginx
+
+- name: Install ngingress helm package in namespace tech
+  kubernetes.core.helm:
+    name: ngingress
+    namespace: ingress-controller
+    chart_ref: ingress-nginx/ingress-nginx
+    chart_version: "{{ingress_controller.helm_version}}"
+    update_repo_cache: true
+    values:
+      controller:
+        kind: DaemonSet
+        service:
+          externalTrafficPolicy: Local
+
+- name: Wait for ingress pods to become ready
+  kubernetes.core.k8s:
+    namespace: ingress-controller
+    kind: Pod
+    label_selectors:
+      - name = ingress-nginx
+    wait: true
+    wait_condition:
+      type: Ready
+      status: true
+    wait_timeout: 600
+
+
+- name: Wait for admission endpoint to become ready
+  kubernetes.core.k8s:
+    namespace: ingress-controller
+    name: ngingress-ingress-nginx-controller-admission
+    kind: Endpoints
+    label_selectors:
+      - name = ingress-nginx
+    wait: yes
+    wait_sleep: 5
+    wait_timeout: 600
+
+- name: Wait for endpoint to become ready
+  kubernetes.core.k8s:
+    namespace: ingress-controller
+    name: ngingress-ingress-nginx-controller
+    kind: Endpoints
+    label_selectors:
+      - name = ingress-nginx
+    wait: true
+    wait_sleep: 5
+    wait_timeout: 600
+
+- name: Get Ingress-Controller Service
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: ngingress-ingress-nginx-controller
+    namespace: ingress-controller
+  register: ingress_controller_service
+  until: ingress_controller_service is defined and ((ingress_controller_service.resources | length) > 0)
+  retries: 60
+  delay: 5
+
+- name: Register Load balancer Hostname
+  ansible.builtin.shell: "echo {{ingress_controller_service.resources[0].status.loadBalancer.ingress[0].hostname }}"
+  register: loadbalancer_host
+

@@ -1,0 +1,60 @@
+
+# Postgres Operator Namespace
+- name: Create postgres-operator namespace
+  kubernetes.core.k8s:
+    name: postgres-operator
+    api_version: v1
+    kind: Namespace
+    state: present
+
+# Postgres Operator
+
+- name: Add postgres-operator repo
+  kubernetes.core.helm_repository:
+    name: postgres-operator
+    repo_url: https://raw.githubusercontent.com/zalando/postgres-operator/master/charts/postgres-operator
+
+- name: Install postgres-operator helm package in namespace postgres-operator
+  kubernetes.core.helm:
+    name: postgres-operator
+    namespace: postgres-operator
+    chart_ref: postgres-operator/postgres-operator
+    chart_version: "{{postgres_operator.helm_version}}"
+    update_repo_cache: true
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+# Postgres Operator UI
+
+- name: Add postgres-operator ui repo
+  kubernetes.core.helm_repository:
+    name: postgres-operator-ui
+    repo_url: https://raw.githubusercontent.com/zalando/postgres-operator/master/charts/postgres-operator-ui
+
+- name: Install postgres-operator-ui helm package in namespace postgres-operator
+  kubernetes.core.helm:
+    name: postgres-operator-ui
+    namespace: postgres-operator
+    chart_ref: postgres-operator-ui/postgres-operator-ui
+    chart_version: "{{postgres_operator.helm_version}}"
+    update_repo_cache: true
+    values: "{{ lookup('template', 'values-ui.yml.j2') | from_yaml }}"
+
+
+# PG Admin
+
+- name: Add pgadmin repo
+  kubernetes.core.helm_repository:
+    name: runix
+    repo_url: https://helm.runix.net
+
+- name: Install pgadmin helm package in namespace postgres-operator
+  kubernetes.core.helm:
+    name: pgadmin
+    namespace: postgres-operator
+    chart_ref: runix/pgadmin4
+    chart_version: "{{postgres_operator.pgadmin_helm_version}}"
+    update_repo_cache: true
+    values: "{{ lookup('template', 'values-pgadmin.yml.j2') | from_yaml }}"
+
+
+

@@ -1,0 +1,62 @@
+---
+# Composants à déployer sur le cluster homelab
+# Passer enabled: false pour désactiver un composant
+
+# --- MetalLB — LoadBalancer L2 (obligatoire en premier) ---
+metallb:
+  enabled: true
+  helm_version: "0.14.5"
+  ip_range: "192.168.1.54"   # à adapter à votre réseau LAN
+
+# --- Traefik — Ingress Controller ---
+traefik:
+  enabled: true
+  helm_version: "26.1.0"
+
+# --- cert-manager — TLS automatique via Let's Encrypt ---
+cert_manager:
+  enabled: true
+  helm_version: "1.14.4"
+  contact_email: "admin@example.com"   # email pour les notifications Let's Encrypt
+
+# --- ArgoCD — GitOps ---
+argocd:
+  enabled: true
+  helm_version: "5.25.0"
+
+# --- Kubernetes Dashboard ---
+kube_dashboard:
+  enabled: true
+  helm_version: "6.0.0"
+
+# --- Prometheus + Grafana (recommandé ≥ 16 Go RAM) ---
+monitoring:
+  enabled: false
+  prometheus_helm_version: "45.7.1"
+
+# --- Composants optionnels avancés ---
+external_secrets:
+  enabled: false
+  helm_version: "0.7.2"
+
+postgres_operator:
+  enabled: false
+
+eck:
+  enabled: false
+  helm_version: "2.4.0"
+
+logging:
+  enabled: false
+
+rancher:
+  enabled: false
+  helm_version: "2.7.1"
+
+apps:
+  enabled: false
+
+# --- nginx ingress (legacy — remplacé par Traefik) ---
+ingress_controller:
+  enabled: false
+  helm_version: "4.5.2"

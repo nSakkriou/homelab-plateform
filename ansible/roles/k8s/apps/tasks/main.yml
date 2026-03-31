@@ -1,0 +1,42 @@
+# https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_module.html
+- name: Create namespace from template
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    state: present
+    name: "{{ item.namespace }}"
+  with_items: "{{ apps.namespaces }}"
+
+# https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_module.html
+- name: Create registry secret from template
+  kubernetes.core.k8s:
+    state: present
+    template: registry.secret.yml.j2
+  with_items: "{{ apps.namespaces }}"
+
+- name: Get Ingress-Controller Service
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: ngingress-ingress-nginx-controller
+    namespace: ingress-controller
+  register: ingress_controller_service
+  until: ingress_controller_service is defined and ((ingress_controller_service.resources | length) > 0)
+  retries: 60
+  delay: 5
+
+- name: Register Load balancer Hostname
+  ansible.builtin.shell: "echo {{ingress_controller_service.resources[0].status.loadBalancer.ingress[0].hostname }}"
+  register: loadbalancer_host
+
+- name: Add a wildcard record that points to the K8S Amazon LB
+  community.aws.route53:
+    state: present
+    zone: "{{ dns.zone }}"
+    overwrite: true
+    record: "*.{{ dns.base_host }}"
+    type: A
+    value: "{{ loadbalancer_host.stdout_lines[0] }}"
+    alias: true
+    alias_hosted_zone_id: "Z3Q77PNBQS71R4"
+    wait: true

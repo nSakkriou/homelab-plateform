@@ -1,0 +1,6 @@
+---
+# Variables spécifiques au nœud k3s
+# Adapter ces valeurs à votre environnement
+
+dns:
+  base_host: nathansakkriou.com   # votre domaine principal

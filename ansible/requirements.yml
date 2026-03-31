@@ -1,0 +1,8 @@
+---
+collections:
+  - name: kubernetes.core
+    version: '2.4.0'
+  # community.aws est optionnel — requis uniquement si external_secrets, rancher
+  # ou logging sont activés avec des backends AWS (Route53, Secrets Manager)
+  # - name: community.aws
+  #   version: '5.3.0'

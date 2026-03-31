@@ -1,0 +1,42 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+spec:
+  version: {{ kibana.version }}
+  count: {{ kibana.replicas }}
+  elasticsearchRef:
+    name: elasticsearch
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+ 
+---
+ 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: tech
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: {{ kibana.clusterIssuer }}
+
+spec:
+  rules:
+  - host: {{ kibana.suffix + "." + dns.base_host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: kibana-kb-http
+            port:
+              number: 5601
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+      - {{ kibana.suffix + "." + dns.base_host }}
+    secretName: kibana-tls

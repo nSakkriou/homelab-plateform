@@ -1,0 +1,13 @@
+---
+
+- hosts: it
+  gather_facts: false
+  connection: local
+  roles:
+    - role: k8s
+      module_defaults:
+        group/kubernetes.core.k8s:
+          kubeconfig: "{{cluster.kubeconfig | from_json}}"
+        group/kubernetes.core.helm:
+          kubeconfig: "{{cluster.kubeconfig | from_json}}"
+

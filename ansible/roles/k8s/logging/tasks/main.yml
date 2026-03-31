@@ -1,0 +1,119 @@
+# Add Elasticsearch Cluster log
+
+- name: Add an kibana logging record that points to an Amazon lb
+  community.aws.route53:
+    state: present
+    zone: "{{ dns.zone }}"
+    overwrite: true
+    record: "{{ kibana.suffix + '.' + dns.base_host }}"
+    type: A
+    value: "{{ loadbalancer_host.stdout_lines[0] }}"
+    alias: true
+    alias_hosted_zone_id: "Z3Q77PNBQS71R4"
+    wait: true
+
+
+- name: Create Elasticsearch Logging cluster
+  kubernetes.core.k8s:
+    state: present
+    namespace: tech
+    template: 'elasticsearch.yml.j2'
+  register: result_elastic
+  until: result_elastic is defined
+  retries: 60
+  delay: 5
+
+- name: Create Kibana Logging cluster
+  kubernetes.core.k8s:
+    state: present
+    namespace: tech
+    template: 'kibana.yml.j2'
+  register: result_kibana
+  until: result_kibana is defined
+  retries: 60
+  delay: 5
+
+# retrieve password
+- name: Get Elastic admin password
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: elasticsearch-es-elastic-user
+    namespace: tech
+  register: elastic_secret
+
+- name: Show elatic pwd
+  ansible.builtin.debug:
+    msg:
+      - "elastic pwd: {{elastic_secret.resources[0].data.elastic | b64decode }}"
+
+# Add logstash endpoint entry
+
+- name: Create Logstash Configuration Logging cluster
+  kubernetes.core.k8s:
+    state: present
+    namespace: tech
+    template: 'logstash-config.yml.j2'
+  register: result_conf
+  until: result_conf is defined
+  retries: 60
+  delay: 5
+
+- name: Restart logstash when conf modify
+  kubernetes.core.k8s:
+    state: absent
+    kind: deployment
+    name: logstash
+    namespace: tech
+    api_version: apps/v1
+  retries: 60
+  delay: 5
+  when: result_conf.changed
+
+- name: Create Logstash Logging cluster
+  kubernetes.core.k8s:
+    state: present
+    namespace: tech
+    template: 'logstash.yml.j2'
+  register: result_logconf
+  until: result_logconf is defined
+  retries: 60
+  delay: 5
+
+- name: Wait for endpoint logstash to become ready
+  kubernetes.core.k8s:
+    namespace: tech
+    name: logstash-loadbalancer
+    kind: Endpoints
+    wait: true
+    wait_sleep: 5
+    wait_timeout: 600
+
+- name: Get Logstash Service
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: logstash-loadbalancer
+    namespace: tech
+  register: logstash_service
+  until: logstash_service is defined and ((logstash_service.resources | length) > 0)
+  retries: 60
+  delay: 5
+
+- name: Register Load balancer Hostname
+  ansible.builtin.shell: "echo {{logstash_service.resources[0].status.loadBalancer.ingress[0].hostname }}"
+  register: logstash_loadbalancer_host
+
+# Loop on managed cluster logging
+
+- name: Create Filebeat Logging cluster
+  with_items: "{{ managed_clusters }}"
+  kubernetes.core.k8s:
+    state: present
+    namespace: tech
+    template: 'filebeat.yml.j2'
+    kubeconfig: "{{ item.kubeconfig }}"
+  register: result
+  until: result is defined
+  retries: 60
+  delay: 5

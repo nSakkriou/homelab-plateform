@@ -1,0 +1,40 @@
+---
+# MetalLB — fournit des IPs LoadBalancer sur un réseau local (L2)
+# Doit être déployé avant tout service de type LoadBalancer (Traefik, etc.)
+
+- name: Add MetalLB Helm repo
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
+
+- name: Install MetalLB
+  kubernetes.core.helm:
+    name: metallb
+    namespace: metallb-system
+    chart_ref: metallb/metallb
+    chart_version: "{{ metallb.helm_version }}"
+    create_namespace: true
+    update_repo_cache: true
+    wait: true
+    wait_timeout: 300
+
+- name: Wait for MetalLB controller to be ready
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    name: metallb-controller
+    namespace: metallb-system
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 300
+
+- name: Configure MetalLB IP address pool
+  kubernetes.core.k8s:
+    state: present
+    template: ipaddresspool.yml.j2
+
+- name: Configure MetalLB L2 advertisement
+  kubernetes.core.k8s:
+    state: present
+    template: l2advertisement.yml.j2

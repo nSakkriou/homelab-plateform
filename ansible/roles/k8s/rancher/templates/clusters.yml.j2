@@ -1,0 +1,10 @@
+apiVersion: provisioning.cattle.io/v1
+kind: Cluster
+metadata:
+  name: {{ item.name }}
+  annotations:
+    field.cattle.io/description: {{ item.name }} env cluster
+  labels:
+    {}
+  namespace: fleet-default
+__clone: true

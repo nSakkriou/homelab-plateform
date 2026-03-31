@@ -1,0 +1,88 @@
+---
+# Ordre de déploiement :
+# 1. MetalLB   — fournit les IPs LoadBalancer (requis avant Traefik)
+# 2. Traefik   — ingress controller (requis avant cert-manager pour HTTP-01)
+# 3. cert-manager — TLS automatique
+# 4. ArgoCD, Dashboard, Monitoring — utilisent Traefik + cert-manager
+# Composants optionnels : external_secrets, eck, logging, postgres_operator, rancher, apps
+dependencies:
+
+  - role: k8s/metallb
+    when:
+      - metallb.enabled
+    tags:
+      - metallb
+
+  - role: k8s/traefik
+    when:
+      - traefik.enabled
+    tags:
+      - traefik
+
+  - role: k8s/cert_manager
+    when:
+      - cert_manager.enabled
+    tags:
+      - cert_manager
+
+  - role: k8s/argocd
+    when:
+      - argocd.enabled
+    tags:
+      - argocd
+
+  - role: k8s/kube_dashboard
+    when:
+      - kube_dashboard.enabled
+    tags:
+      - kube_dashboard
+
+  - role: k8s/monitoring
+    when:
+      - monitoring.enabled
+    tags:
+      - monitoring
+
+  # --- Composants optionnels (désactivés par défaut) ---
+
+  - role: k8s/external_secrets
+    when:
+      - external_secrets.enabled | default(false)
+    tags:
+      - external_secrets
+
+  - role: k8s/ingress_controller
+    when:
+      - ingress_controller.enabled | default(false)
+    tags:
+      - ingress_controller
+
+  - role: k8s/postgres_operator
+    when:
+      - postgres_operator.enabled | default(false)
+    tags:
+      - postgres_operator
+
+  - role: k8s/eck
+    when:
+      - eck.enabled | default(false)
+    tags:
+      - eck
+
+  - role: k8s/logging
+    when:
+      - logging.enabled | default(false)
+    tags:
+      - logging
+
+  - role: k8s/rancher
+    when:
+      - rancher.enabled | default(false)
+    tags:
+      - rancher
+
+  - role: k8s/apps
+    when:
+      - apps.enabled | default(false)
+    tags:
+      - apps

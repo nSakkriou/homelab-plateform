@@ -1,0 +1,37 @@
+# Enabled deployments
+
+# Common
+cert_manager:
+  enabled: true
+  helm_version: 1.11.1 # jetstack/cert-manager Helm Chart
+  contact_email: admin+k8s@takima.fr
+ingress_controller:
+  enabled: true
+  helm_version: 4.5.2 # ingress-nginx/ingress-nginx Helm Chart
+external_secrets:
+  enabled: true
+  helm_version: 0.7.2
+kube_dashboard:
+  enabled: true
+  helm_version: 6.0.0 # kubernetes-dashboard/kubernetes-dashboard Helm Chart
+eck:
+  enabled: true
+  helm_version: 2.4.0
+
+# App-Cluster specific
+postgres_operator:
+  enabled: true
+  helm_version: 1.9.0 # postgres-operator/postgres-operator Helm Chart
+  pgadmin_helm_version: 1.14.4 # runix/pgadmin4 Helm Chart
+apps:
+  enabled: true
+
+# Tech-Cluster specific
+argocd:
+  enabled: false
+monitoring:
+  enabled: false
+rancher:
+  enabled: false
+logging:
+  enabled: false

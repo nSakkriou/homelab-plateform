@@ -1,0 +1,52 @@
+---
+# ArgoCD — GitOps
+# Déploie ArgoCD avec Traefik comme ingress et cert-manager pour TLS
+
+- name: Create argocd namespace
+  kubernetes.core.k8s:
+    name: argocd
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Add ArgoCD Helm repo
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: https://argoproj.github.io/argo-helm
+
+- name: Install ArgoCD Helm chart
+  kubernetes.core.helm:
+    name: argocd
+    namespace: argocd
+    chart_ref: argo/argo-cd
+    chart_version: "{{ argocd.helm_version }}"
+    create_namespace: false
+    update_repo_cache: true
+    wait: true
+    wait_timeout: 600
+    values: "{{ lookup('template', 'values.yml.j2') | from_yaml }}"
+
+- name: Wait for ArgoCD server to be ready
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    name: argocd-server
+    namespace: argocd
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 600
+
+- name: Get ArgoCD initial admin password
+  kubernetes.core.k8s_info:
+    kind: Secret
+    name: argocd-initial-admin-secret
+    namespace: argocd
+  register: argo_admin_secret
+  until: argo_admin_secret.resources | length > 0
+  retries: 30
+  delay: 10
+
+- name: Display ArgoCD initial admin password
+  ansible.builtin.debug:
+    msg: "ArgoCD initial admin password: {{ argo_admin_secret.resources[0].data.password | b64decode }}"

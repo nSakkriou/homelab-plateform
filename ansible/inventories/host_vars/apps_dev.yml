@@ -1,0 +1,8 @@
+apps:
+  enabled: true
+  namespaces:
+    - namespace: takione
+      registry_external_secret_key: auth-takione-registry
+dns:
+  zone: taki.one
+  base_host: dev.taki.one

@@ -1,0 +1,5 @@
+---
+# Classe d'ingress utilisée par cert-manager pour les challenges HTTP-01
+# traefik = Traefik Ingress Controller (défaut homelab)
+# nginx   = nginx ingress (legacy)
+cert_ingress_class: "traefik"

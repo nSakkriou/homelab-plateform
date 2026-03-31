@@ -1,5 +1,5 @@
 {
-  description = "Homelab NixOS — k3s + ArgoCD + Gateway API";
+  description = "Homelab NixOS — k3s";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";

@@ -1,0 +1,18 @@
+- name: Retrieve kube-dashboard record
+  amazon.aws.route53:
+    state: get
+    zone: "{{ dns.zone }}"
+    record: "{{ dashboard_suffix + '.' + dns.base_host }}"
+    type: A
+  register: rec
+
+- name: Remove kube-dashboard record
+  community.aws.route53:
+    state: absent
+    zone: "{{ dns.zone }}"
+    record: "{{ rec.set.record }}"
+    type: "{{ rec.set.type }}"
+    value: "{{ rec.set.value }}"
+    alias: true
+    alias_hosted_zone_id: "Z3Q77PNBQS71R4"
+  when: rec.set['record'] is defined

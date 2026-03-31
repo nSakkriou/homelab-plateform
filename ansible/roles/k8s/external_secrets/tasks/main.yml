@@ -1,0 +1,61 @@
+# External Secrets from AWS
+
+- name: Create external-secrets namespace
+  kubernetes.core.k8s:
+    name: external-secrets
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create AWS secret in external-secrets
+  kubernetes.core.k8s:
+    state: present
+    namespace: external-secrets
+    template: 'aws.secret.yml.j2'
+
+- name: Add external-secrets helm repo
+  kubernetes.core.helm_repository:
+    name: external-secrets
+    repo_url: https://charts.external-secrets.io
+
+- name: Install external-secrets helm package
+  kubernetes.core.helm:
+    name: external-secrets
+    namespace: external-secrets
+    chart_ref: external-secrets/external-secrets
+    chart_version: "{{external_secrets.helm_version}}"
+    create_namespace: true
+    update_repo_cache: true
+
+- name: Get external-secrets operator pods
+  kubernetes.core.k8s_info:
+    namespace: external-secrets
+    kind: Pod
+    label_selectors:
+      - "app.kubernetes.io/name in (external-secrets, external-secrets-cert-controller, external-secrets-webhook)"
+  register: external_secrets_pods
+  until: external_secrets_pods.resources | length == 3
+
+- name: Wait for external-secrets operator pods to become ready
+  kubernetes.core.k8s:
+    namespace: external-secrets
+    kind: Pod
+    name: "{{ item.metadata.name }}"
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_timeout: 600
+  with_items: "{{ external_secrets_pods.resources }}"
+
+- name: Create AWS secretstore in external-secrets
+  kubernetes.core.k8s:
+    state: present
+    namespace: external-secrets
+    template: 'aws.secretstore.yml.j2'
+    wait: yes
+    wait_timeout: 60
+  register: result
+  until: result is defined
+  retries: 60
+  delay: 5

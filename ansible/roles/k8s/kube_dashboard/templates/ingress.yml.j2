@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ dashboard_issuer }}"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  name: dashboard
+  namespace: kubernetes-dashboard
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ dashboard_suffix + '.' + dns.base_host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: kubernetes-dashboard
+                port:
+                  number: 443
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - {{ dashboard_suffix + '.' + dns.base_host }}
+      secretName: kube-dashboard-tls

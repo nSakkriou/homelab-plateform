@@ -1,0 +1,43 @@
+---
+# setup_platform.yml
+# Déploiement de la plateforme Kubernetes sur le nœud k3s homelab
+#
+# Usage :
+#   ansible-playbook -i inventories/homelab.ini setup_platform.yml
+#   ansible-playbook -i inventories/homelab.ini setup_platform.yml --tags traefik
+#   ansible-playbook -i inventories/homelab.ini setup_platform.yml --tags argocd
+
+# ─── Play 1 : récupérer le kubeconfig depuis le nœud k3s ──────────────────────
+- name: Fetch kubeconfig from k3s node
+  hosts: k3s_nodes
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Fetch k3s kubeconfig
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /tmp/k3s-homelab.yaml
+        flat: yes
+
+    - name: Replace 127.0.0.1 with actual node IP in kubeconfig
+      ansible.builtin.replace:
+        path: /tmp/k3s-homelab.yaml
+        regexp: 'https://127\.0\.0\.1:6443'
+        replace: "https://{{ ansible_host }}:6443"
+      delegate_to: localhost
+
+# ─── Play 2 : déploiement des composants Kubernetes ───────────────────────────
+- name: Deploy platform components
+  hosts: k3s_nodes
+  gather_facts: false
+  connection: local
+
+  module_defaults:
+    group/kubernetes.core.k8s:
+      kubeconfig: /tmp/k3s-homelab.yaml
+    group/kubernetes.core.helm:
+      kubeconfig: /tmp/k3s-homelab.yaml
+
+  roles:
+    - role: k8s

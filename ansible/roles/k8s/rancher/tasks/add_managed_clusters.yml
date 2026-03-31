@@ -1,0 +1,69 @@
+- name: Create rancher managed clusters
+  kubernetes.core.k8s:
+    state: present
+    namespace: fleet-default
+    template: 'clusters.yml.j2'
+
+- name: retrieve cluster id
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3/clusters?name={{ item.name }}"
+    method: GET
+    validate_certs: no
+    status_code: 200
+    return_content: yes
+    headers:
+      Authorization: Bearer {{ token }}
+  ignore_errors: yes
+  register: cluster_response
+  retries: 5
+  delay: 10
+  
+- name: Set current cluster id
+  set_fact:
+    cluster_id: "{{ cluster_response.json.data[0].id }}"
+  when: cluster_response is succeeded
+  ignore_errors: true
+
+- name: query command registration url
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/v3/clusterregistrationtokens?clusterId={{ cluster_id }}"
+    method: GET
+    validate_certs: no
+    status_code: 200
+    return_content: yes
+    headers:
+      Authorization: Bearer {{ token }}
+  ignore_errors: yes
+  register: registration_response
+  retries: 5
+  delay: 10
+
+- name: retrieve manifest cluster url
+  set_fact:
+    registration_manifest: "{{ registration_response.json.data[0].manifestUrl }}"
+  when: registration_response is succeeded
+  ignore_errors: true
+
+- debug: msg="{{ registration_manifest }}"
+  ignore_errors: true
+
+- name: Create a ressources rancher agent to register the cluster
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ registration_manifest }}"
+    kubeconfig: "{{ item.kubeconfig }}"
+
+- name: install monitoring in rancher
+  ansible.builtin.uri:
+    url: "https://{{ rancher_suffix + '.' + dns.base_host }}/k8s/clusters/{{ cluster_id }}/v1/catalog.cattle.io.clusterrepos/rancher-charts?action=install"
+    method: POST
+    body_format: json
+    body: "{{lookup('ansible.builtin.template', 'monitoring.json.j2')}}"
+    validate_certs: no
+    status_code: 201
+    return_content: yes
+    headers:
+      Authorization: Bearer {{ token }}
+  ignore_errors: yes
+  retries: 5
+  delay: 10

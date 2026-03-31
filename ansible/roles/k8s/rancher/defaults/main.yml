@@ -1,0 +1,5 @@
+---
+# Set rancher Host url
+rancher_suffix: "rancher"
+rancher_ingress_class: "nginx"
+rancher_issuer: "letsencrypt-prod"
